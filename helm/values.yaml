@@ -96,10 +96,15 @@ securityContext:
 service:
   type: ClusterIP
   ports:
-    grpc: 3322
-    metrics: 9497
-    http: 8080
-
+    - name: grpc
+      value: 3322
+    - name: metrics
+      value: 9497
+    - name: http
+      value: 8080
+    - name: pgsql
+      value: 5432
+      
 ingress:
   enabled: false
   className: ""
@@ -124,6 +129,8 @@ resources: {}
   #   memory: 128Mi
 
 nodeSelector: {}
+
+priorityClassName: ""
 
 tolerations: []
 

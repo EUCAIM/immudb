@@ -1,6 +1,14 @@
 {{- if gt (.Values.replicaCount | toString | atoi) 1 }}
 {{- fail "At the moment, you can just have 1 instance of immudb. We are working to raise that limit."}}
 {{- end }}
+
+{{- $portMetrics := false }}
+{{- range .Values.service.ports }}
+  {{- if eq .name "metrics" }}
+    {{- $portMetrics = true }}
+  {{- end }}
+{{- end }}
+
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -54,16 +62,16 @@ spec:
             - {{ . | quote }}
           {{- end }}
           {{- end }}
+          {{- if .Values.service.ports }}
           ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-            - name: grpc
-              containerPort: 3322
-              protocol: TCP
-            - name: metrics
-              containerPort: 9497
-              protocol: TCP
+          {{- range $index, $port := .Values.service.ports }}
+            - name: {{ $port.name }}
+              containerPort: {{ $port.value }}
+              protocol: TCP            
+          {{- end }}        
+          {{- end }}
+
+          {{ if $portMetrics }}
           livenessProbe:
             httpGet:
               path: /readyz
@@ -72,7 +80,8 @@ spec:
           readinessProbe:
             httpGet:
               path: /readyz
-              port: metrics
+              port: metrics                   
+          {{- end }}        
           env:
           {{- if $.Values.adminPassword }}
           - name: IMMUDB_ADMIN_PASSWORD
@@ -115,6 +124,9 @@ spec:
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{ if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName  | quote }}
       {{- end }}
       {{- with .Values.affinity }}
       affinity:

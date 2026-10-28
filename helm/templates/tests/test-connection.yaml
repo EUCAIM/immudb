@@ -1,3 +1,11 @@
+{{- $portHttp := dict }}
+{{- range .Values.service.ports }}
+  {{- if eq .name "http" }}
+    {{- $portHttp = . }}
+  {{- end }}
+{{- end }}
+
+{{- if $portHttp.name }}
 apiVersion: v1
 kind: Pod
 metadata:
@@ -12,7 +20,7 @@ spec:
     - name: wget
       image: busybox
       command: ['wget']
-      args: ['{{ include "immudb.fullname" . }}:{{ .Values.service.ports.http }}']
+      args: ['{{ include "immudb.fullname" . }}:{{ $portHttp.value }}']
       resources:
         limits:
           memory: "64Mi"
@@ -21,3 +29,4 @@ spec:
           memory: "32Mi"
           ephemeral-storage: "32Mi"
   restartPolicy: Never
+{{- end }}
